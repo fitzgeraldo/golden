@@ -2,86 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Warsaw Golden Mile – Interactive Map</title>
+  <title>Warsaw Golden Mile – Craft Beer Walk</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- Leaflet & Routing Machine CSS (no SRI to avoid sandbox issues) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
   <style>
     html,body{margin:0;padding:0;height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
     #map{height:100%;width:100%}
     .marker-num{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#ff6b00;color:#fff;font-weight:700;font-size:.8rem;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.4)}
-    .panel{position:absolute;z-index:1000;background:#fff;padding:10px 12px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,.22);font-size:.85rem;line-height:1.35;overflow-y:auto;max-height:380px;width:280px}
+    .panel{position:absolute;z-index:1000;background:#fff;padding:10px 12px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,.22);font-size:.85rem;line-height:1.4;max-height:380px;overflow-y:auto;width:280px}
     .panel h4{margin:0 0 6px;font-size:1rem}
     .legend{bottom:10px;right:10px}
-    .itinerary{top:10px;right:10px}
+    .schedule{top:10px;right:10px}
     .recs{top:60px;left:10px;width:300px}
-    .recs ol{list-style:none;padding:0;margin:0}
+    .recs ol{list-style:none;margin:0;padding:0}
     .recs li{background:#f7f7f7;border-radius:8px;margin:0 0 6px;padding:8px 10px;cursor:pointer;transition:background .2s}
     .recs li:hover{background:#ffe8d9}
     .recs hr{border:0;border-top:1px dashed #ccc;margin:10px 0 8px}
-    .recs ul{padding-left:18px;margin:0}
+    .recs ul{margin:0;padding-left:18px}
     .fab{position:absolute;left:10px;width:46px;height:46px;border-radius:50%;background:#ff6b00;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1100;cursor:pointer;user-select:none}
     .fab-legend{bottom:174px}
-    .fab-itin{bottom:118px}
+    .fab-schedule{bottom:118px}
     .fab-recs{bottom:62px}
-    @media(max-width:600px){.panel{width:90vw;max-height:50vh;display:none;font-size:.94rem}.marker-num{width:24px;height:24px;font-size:.7rem}}
+    @media(max-width:600px){.panel{width:92vw;max-height:50vh;display:none;font-size:.95rem}.marker-num{width:24px;height:24px;font-size:.7rem}}
   </style>
-  <!-- JS libs (no SRI) -->
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script defer src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
 <body>
   <div id="map"></div>
   <script>
-  window.addEventListener('DOMContentLoaded',()=>{
-    const bars=[
-      {n:1,name:"PINTA Warszawa",addr:"Chmielna 7/9",coords:[52.23236,21.00972],time:"17:00–17:40",beer:"Atak Chmielu IPA",food:"кубанос или рыбный тост"},
-      {n:2,name:"Hoppiness Beer & Food",addr:"Chmielna 27/31",coords:[52.22925,21.01389],time:"17:45–18:25",beer:"Artezan NZ West Coast IPA",food:"Hoppiness Burger"},
-      {n:3,name:"BrewDog Warszawa",addr:"Widok 8",coords:[52.23245,21.01105],time:"18:30–19:10",beer:"Punk IPA",food:"Buffalo Wings"},
-      {n:4,name:"Gorączka Złota",addr:"Wilcza 29",coords:[52.22538,21.013],time:"19:15–19:55",beer:"Komes Porter Baltic",food:"татарский бифштекс"},
-      {n:5,name:"Hopito Parkingowa",addr:"Żurawia 32/34",coords:[52.22546,21.01759],time:"20:00–20:40",beer:"NEIPA Tropic Vortex",food:"street‑food tacos"},
-      {n:6,name:"Jabeerwocky",addr:"Nowogrodzka 12",coords:[52.22852,21.01066],time:"20:45–21:25",beer:"Collab DDH DIPA",food:"крэнцель с горчицей"},
-      {n:7,name:"Kufle i Kapsle",addr:"Nowogrodzka 25",coords:[52.2285,21.0072],time:"21:30–22:10",beer:"Smoky Joe Peated Stout",food:"силезская колбаска"},
-      {n:8,name:"PiwPaw Beer Heaven",addr:"Foksal 16",coords:[52.23603,21.02055],time:"22:15–22:55",beer:"Gose ‘Hokus Pokus’",food:"nachos & сырный дип"},
-      {n:9,name:"The Alchemist Gastropub",addr:"pl. Piłsudskiego 3",coords:[52.24038,21.01144],time:"23:00–23:40",beer:"Self‑pour Pilsner",food:"flatbread"},
-      {n:10,name:"Same Krafty",addr:"Nowomiejska 10",coords:[52.24909,21.01184],time:"23:50–00:25",beer:"Local Saison",food:"буррата‑пицца"},
-      {n:11,name:"Cześć!",addr:"Grzybowska 2",coords:[52.23666,21.00479],time:"00:35–01:05",beer:"SALSA Sour Ale",food:"панини"},
-      {n:12,name:"Drugie Dno",addr:"Nowogrodzka 4",coords:[52.22928,21.01211],time:"01:15–⏰",beer:"Barrel‑aged Imperial Stout",food:"сырная доска"}
+  document.addEventListener('DOMContentLoaded',()=>{
+    /* === Venue data === */
+    const venues=[
+      {n:1,name:"PINTA Warsaw",addr:"Chmielna 7/9",coords:[52.23236,21.00972],slot:"17:00 – 17:40",beer:"Atak Chmielu IPA",food:"Kubanoss sausage or fish toast"},
+      {n:2,name:"Hoppiness Beer & Food",addr:"Chmielna 27/31",coords:[52.22925,21.01389],slot:"17:45 – 18:25",beer:"Artezan NZ West Coast IPA",food:"Hoppiness Burger"},
+      {n:3,name:"BrewDog Warsaw",addr:"Widok 8",coords:[52.23245,21.01105],slot:"18:30 – 19:10",beer:"Punk IPA",food:"Buffalo wings"},
+      {n:4,name:"Gorączka Złota",addr:"Wilcza 29",coords:[52.22538,21.013],slot:"19:15 – 19:55",beer:"Komes Baltic Porter",food:"Steak tartare"},
+      {n:5,name:"Hopito Parkingowa",addr:"Żurawia 32/34",coords:[52.22546,21.01759],slot:"20:00 – 20:40",beer:"NEIPA Tropic Vortex",food:"Street‑food tacos"},
+      {n:6,name:"Jabeerwocky",addr:"Nowogrodzka 12",coords:[52.22852,21.01066],slot:"20:45 – 21:25",beer:"Collab DDH DIPA",food:"Pretzel with mustard"},
+      {n:7,name:"Kufle i Kapsle",addr:"Nowogrodzka 25",coords:[52.2285,21.0072],slot:"21:30 – 22:10",beer:"Smoky Joe Peated Stout",food:"Silesian sausage"},
+      {n:8,name:"PiwPaw Beer Heaven",addr:"Foksal 16",coords:[52.23603,21.02055],slot:"22:15 – 22:55",beer:"Gose ‘Hokus Pokus’",food:"Nachos & cheese dip"},
+      {n:9,name:"The Alchemist Gastropub",addr:"pl. Piłsudskiego 3",coords:[52.24038,21.01144],slot:"23:00 – 23:40",beer:"Self‑pour Pilsner",food:"Flatbread"},
+      {n:10,name:"Same Krafty",addr:"Nowomiejska 10",coords:[52.24909,21.01184],slot:"23:50 – 00:25",beer:"Local Saison",food:"Burrata pizza"},
+      {n:11,name:"Cześć!",addr:"Grzybowska 2",coords:[52.23666,21.00479],slot:"00:35 – 01:05",beer:"SALSA Sour Ale",food:"Panini"},
+      {n:12,name:"Drugie Dno",addr:"Nowogrodzka 4",coords:[52.22928,21.01211],slot:"01:15 – close",beer:"Barrel‑aged Imperial Stout",food:"Cheese board"}
     ];
 
-    const snacks=["Pretzel platter","Charcuterie board","Nachos grande","15 buffalo wings","Polish tapas set"];
-    const tips=["Пейте 0,3 л и воду","Маршрут пешком","Резерв – Alchemist","Фото с вывесками = бонус"];
-    const gLink=b=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.name+", "+b.addr+", Warsaw")}`;
+    const snacks=["Pretzel platter","Charcuterie board","Nachos grande","Bucket of 15 wings","Polish tapas set"];
+    const tips=[
+      "Stick to 0.3‑litre pours and alternate with water.",
+      "Whole route is walkable; only the stretch from #11 back to Nowogrodzka is 1.4 km – take night bus N37 or a taxi if tired.",
+      "If Same Krafty is closed, linger at The Alchemist or return to PiwPaw – they often pour until 02:00.",
+      "Snap a selfie with each sign; show all 12 to the bartender at Drugie Dno for a free ‘victory sip’."
+    ];
 
-    if(typeof L==='undefined'){document.body.textContent='⚠️ Leaflet failed to load.';return;}
+    const gLink=v=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.addr+", Warsaw")}`;
 
+    /* === Map init === */
+    if(!window.L){document.body.textContent='⚠️ Leaflet failed to load.';return;}
     const map=L.map('map');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 
-    /* Markers */
-    const markers={};
-    bars.forEach(b=>{const icon=L.divIcon({html:`<span class='marker-num'>${b.n}</span>`,className:''});markers[b.n]=L.marker(b.coords,{icon}).addTo(map).bindPopup(`<strong>${b.n}. <a href='${gLink(b)}' target='_blank' rel='noopener'>${b.name}</a></strong><br>${b.addr}<br><em>${b.time}</em><br>🍺 ${b.beer}<br>🍽️ ${b.food}`);});
+    /* === Markers === */
+    const latLngs=venues.map(v=>L.latLng(...v.coords));
+    venues.forEach(v=>{
+      const icon=L.divIcon({html:`<span class='marker-num'>${v.n}</span>`,className:''});
+      L.marker(v.coords,{icon}).addTo(map)
+        .bindPopup(`<strong>${v.n}. <a href='${gLink(v)}' target='_blank' rel='noopener'>${v.name}</a></strong><br>${v.addr}<br><em>${v.slot}</em><br>🍺 ${v.beer}<br>🍽️ ${v.food}`);
+    });
 
-    /* Routing with fallback */
-    const fallback=()=>{L.polyline(bars.map(b=>b.coords),{color:'#ff6b00',dashArray:'6 4'}).addTo(map);map.fitBounds(bars.map(b=>b.coords),{padding:[20,20]});};
-    if(L.Routing){const ctl=L.Routing.control({waypoints:bars.map(b=>L.latLng(...b.coords)),router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),profile:'foot',addWaypoints:false,draggableWaypoints:false,fitSelectedRoutes:false,show:false,lineOptions:{styles:[{color:'#ff6b00',weight:4,opacity:.9}]},createMarker:()=>null}).addTo(map);ctl.on('routesfound',e=>map.fitBounds(e.routes[0].bounds,{padding:[20,20]}));ctl.on('routingerror',fallback);}else fallback();
+    /* === Routing helpers === */
+    function drawFallback(){L.polyline(latLngs,{color:'#ff6b00',dashArray:'6 4'}).addTo(map);map.fitBounds(latLngs,{padding:[20,20]});}
 
-    /* Panels */
-    const addPanel=(cls,html)=>{const d=document.createElement('div');d.className=`panel ${cls}`;d.innerHTML=html;document.body.appendChild(d);return d;};
-    const legendHTML=`<h4>Legend</h4><ol>${bars.map(b=>`<li><b>${b.n}</b> <a href='${gLink(b)}' target='_blank' rel='noopener'>${b.name}</a></li>`).join('')}</ol>`;
-    const itinHTML=`<h4>Маршрут ⏰</h4><ol>${bars.map(b=>`<li><b>${b.time}</b> – ${b.name}</li>`).join('')}</ol>`;
-    const recHTML=`<h4>Что заказать</h4><ol>${bars.map(b=>`<li data-n='${b.n}'>🍺 <b>${b.name}</b><br><small>${b.beer}</small><br>🍽️ <small>${b.food}</small></li>`).join('')}</ol><hr><h4>🍟 Snacks for 3</h4><ul>${snacks.map(s=>`<li>${s}</li>`).join('')}</ul><hr><h4>🚀 Советы</h4><ul>${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+    function buildRoute(start){
+      if(!L.Routing){drawFallback();return;}
+      const way=[start||latLngs[0],...(!start?latLngs.slice(1):latLngs)];
+      const router=L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1',profile:'foot'});
+      const control=L.Routing.control({
+        waypoints:way,
+        router,
+        addWaypoints:false,
+        draggableWaypoints:false,
+        fitSelectedRoutes:false,
+        show:false,
+        lineOptions:{styles:[{color:'#ff6b00',weight:4}]},
+        createMarker:()=>null
+      }).addTo(map);
+      control.on('routesfound',e=>map.fitBounds(e.routes[0].bounds,{padding:[20,20]}));
+      control.on('routingerror',drawFallback);
+    }
+
+    /* === Geolocation === */
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const you=L.latLng(pos.coords.latitude,pos.coords.longitude);
+        L.marker(you).addTo(map).bindPopup('You are here').openPopup();
+        buildRoute(you);
+      },()=>buildRoute(),{enableHighAccuracy:true,timeout:7000});
+    }else buildRoute();
+
+    /* === Panels === */
+    function addPanel(cls,html){const d=document.createElement('div');d.className=`panel ${cls}`;d.innerHTML=html;document.body.appendChild(d);return d;}
+
+    const legendHTML=`<h4>Legend</h4><ol>${venues.map(v=>`<li><b>${v.n}</b> <a href='${gLink(v)}' target='_blank' rel='noopener'>${v.name}</a></li>`).join('')}</ol>`;
+    const scheduleHTML=`<h4>Time Schedule</h4><ol>${venues.map(v=>`<li><b>${v.slot}</b> – ${v.name}</li>`).join('')}</ol>`;
+    const recsHTML=`<h4>Recommended Order</h4><ol>${venues.map(v=>`<li data-n='${v.n}'>🍺 <b>${v.name}</b><br><small>${v.beer}</small><br>🍽️ <small>${v.food}</small></li>`).join('')}</ol><hr><h4>Snacks for Three</h4><ul>${snacks.map(s=>`<li>${s}</li>`).join('')}</ul><hr><h4>Pro Tips</h4><ul>${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 
     const pLegend=addPanel('legend',legendHTML);
-    const pItin=addPanel('itinerary',itinHTML);
-    const pRecs=addPanel('recs',recHTML);
+    const pSchedule=addPanel('schedule',scheduleHTML);
+    const pRecs=addPanel('recs',recsHTML);
 
-    /* Panel interaction on rec list */
-    pRecs.addEventListener('click',e=>{const li=e.target.closest('li[data-n]');if(li){const n=parseInt(li.dataset.n,10);map.setView(markers[n].getLatLng(),16,{animate:true});markers[n].openPopup();}});
+    /* === FABs for mobile === */
+    if(window.innerWidth<=600){
+      function makeFab(cls,sym,panel){const b=document.createElement('div');b.className=`fab ${cls}`;b.textContent=sym;document.body.appendChild(b);b.onclick=()=>panel.style.display=panel.style.display==='block'?'none':'block';}
+      makeFab('fab-legend','ℹ️',pLegend);
+      makeFab('fab-schedule','⏰',pSchedule);
+      makeFab('fab-recs','🍺',pRecs);
+    }
 
-    /* FABs for mobile */
-    if(window.innerWidth<=600){const makeFab=(cls,text,panel)=>{const f=document.createElement('div');f.className=`fab ${cls}`;f.textContent=text;f.onclick=()=>{panel.style.display=panel.style.display==='block'?'none':'block';};document.body.appendChild(f);};makeFab('fab-legend','ℹ',pLegend);makeFab('fab-itin','⏰',pItin);makeFab('fab-recs','🍺',pRecs);}
+    /* === Click highlight from rec list === */
+    pRecs.addEventListener('click',e=>{
+      const li=e.target.closest('li[data-n]');
+      if(!li)return;
+      const idx=parseInt(li.dataset.n,10)-1;
+      map.setView(latLngs[idx],16,{animate:true});
+    });
   });
   </script>
 </body>
