@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Warsaw Golden Mile – Interactive Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Leaflet 1.9.4 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+
+  <style>
+    /* === Base layout === */
+    html,body{margin:0;padding:0;height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#fafafa}
+    #map{height:100%;width:100%}
+    .leaflet-popup-content{font-size:.9rem;line-height:1.35}
+
+    /* Marker */
+    .marker-order{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#ff6b00;color:#fff;font-weight:700;font-size:.8rem;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.35)}
+
+    /* Floating panels */
+    .panel{z-index:1000;background:#fff;padding:10px 12px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,.22);font-size:.84rem;line-height:1.35;overflow-y:auto;max-height:380px;width:280px}
+    .panel h4{margin:0 0 6px;font-size:1rem}
+
+    /* Lists */
+    .legend ol,.itinerary ol{padding-left:22px;margin:0}
+    .legend li,.itinerary li{margin:0 0 5px}
+
+    /* Recommendations */
+    .recs ol{list-style:none;padding:0;margin:0}
+    .recs li.bar-item{background:#f7f7f7;border-radius:8px;margin:0 0 6px;padding:8px 10px;cursor:pointer;transition:background .2s,transform .2s}
+    .recs li.bar-item:hover{background:#ffe8d9;transform:translateY(-2px)}
+    .recs a{color:inherit;text-decoration:underline;word-break:break-word}
+    .recs hr{border:0;border-top:1px dashed #ccc;margin:10px 0 8px}
+    .recs ul{padding-left:18px;margin:0}
+    .recs ul li{margin:0 0 4px}
+
+    /* Scrollbar */
+    .panel::-webkit-scrollbar{width:6px}
+    .panel::-webkit-scrollbar-thumb{background:#d3d3d3;border-radius:4px}
+
+    /* Mobile tweaks */
+    @media(max-width:600px){
+      .panel{width:92vw;max-height:48vh;font-size:.95rem}
+      .panel h4{font-size:1.05rem}
+      .marker-order{width:24px;height:24px;font-size:.7rem}
+    }
+  </style>
+
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+
+  <script defer>
+  window.addEventListener('DOMContentLoaded',()=>{
+    /* ========= DATA ========= */
+    const bars=[
+      {order:1,name:"PINTA Warszawa",address:"Chmielna 7/9",coords:[52.23236,21.00972],time:"17:00 – 17:40",drink:"Atak Chmielu IPA",food:"кубанос или рыбный тост"},
+      {order:2,name:"Hoppiness Beer & Food",address:"Chmielna 27/31",coords:[52.22925,21.01389],time:"17:45 – 18:25",drink:"Artezan NZ West Coast IPA",food:"Hoppiness Burger"},
+      {order:3,name:"BrewDog Warszawa",address:"Widok 8",coords:[52.23245,21.01105],time:"18:30 – 19:10",drink:"Punk IPA",food:"Buffalo Wings"},
+      {order:4,name:"Gorączka Złota",address:"Wilcza 29",coords:[52.22538,21.013],time:"19:15 – 19:55",drink:"Komes Porter Baltic",food:"татарский бифштекс"},
+      {order:5,name:"Hopito Parkingowa",address:"Żurawia 32/34",coords:[52.22546,21.01759],time:"20:00 – 20:40",drink:"NEIPA Tropic Vortex",food:"street‑food tacos"},
+      {order:6,name:"Jabeerwocky",address:"Nowogrodzka 12",coords:[52.22852,21.01066],time:"20:45 – 21:25",drink:"Collab DDH DIPA",food:"крэнцель с горчицей"},
+      {order:7,name:"Kufle i Kapsle",address:"Nowogrodzka 25",coords:[52.2285,21.0072],time:"21:30 – 22:10",drink:"Smoky Joe Peated Stout",food:"силезская колбаска"},
+      {order:8,name:"PiwPaw Beer Heaven",address:"Foksal 16",coords:[52.23603,21.02055],time:"22:15 – 22:55",drink:"Gose \"Hokus Pokus\"",food:"nachos & сырный дип"},
+      {order:9,name:"The Alchemist Gastropub",address:"pl. Piłsudskiego 3",coords:[52.24038,21.01144],time:"23:00 – 23:40",drink:"Self‑pour Pilsner",food:"flatbread"},
+      {order:10,name:"Same Krafty",address:"Nowomiejska 10",coords:[52.24909,21.01184],time:"23:50 – 00:25",drink:"Local Saison",food:"буррата‑пицца"},
+      {order:11,name:"Cześć!",address:"Grzybowska 2",coords:[52.23666,21.00479],time:"00:35 – 01:05",drink:"SALSA Sour Ale",food:"панини"},
+      {order:12,name:"Drugie Dno",address:"Nowogrodzka 4",coords:[52.22928,21.01211],time:"01:15 – ⏰",drink:"Barrel‑aged Imperial Stout",food:"сырная доска"}
+    ];
+
+    const sharedSnacks=[
+      "Pretzel platter with mustard dips",
+      "Cheese & charcuterie board (Polish selection)",
+      "Nachos grande + trio of salsas",
+      "Bucket of 15 buffalo wings",
+      "Polish tapas set (smalec, pickles, herring)"
+    ];
+
+    const tips=[
+      "Поллитры не геройство – берите 0,3 л, пейте воду и закусывайте (бургеры в Hoppiness, пицца в Same Krafty)",
+      "Маршрут пешком – весь путь, кроме перехода от пункта 11 до Nowogrodzka (1,4 км), легко проходится ногами; на финальный рывок можно взять ночной автобус N37 или такси",
+      "Резерв – если Same Krafty уже закрылся, задержитесь в Alchemist или вернитесь к Piw Paw: он иногда льёт до 02:00",
+      "Трофеи – делайте селфи с вывесками: покажете бармену в Drugie Dno и часто получите ‘почётный глоток’ в подарок"
+    ];
+
+    /* === Helper: Google Maps search URL === */
+    const gLink=b=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.name}, ${b.address}, Warsaw`)}`;
+
+    /* === Map init === */
+    if(typeof L==='undefined'){
+      document.body.innerHTML='<p style="padding:1rem;font-family:monospace;color:red">⚠️ Leaflet CDN недоступен. Проверьте соединение.</p>';
+      return;
+    }
+
+    const mapDiv=document.createElement('div');
+    mapDiv.id='map';
+    document.body.appendChild(mapDiv);
+
+    const map=L.map('map').setView([52.233,21.014],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    /* === Markers & path === */
+    const markers={},pathCoords=[];
+    bars.forEach(b=>{
+      const icon=L.divIcon({html:`<span class='marker-order'>${b.order}</span>`,className:''});
+      const m=L.marker(b.coords,{icon}).addTo(map)
+        .bindPopup(`<strong>${b.order}. <a href='${gLink(b)}' target='_blank' rel='noopener'>${b.name}</a></strong><br>${b.address}<br><em>${b.time}</em><br>🍺 ${b.drink}<br>🍽️ ${b.food}`);
+      markers[b.order]=m;
+      pathCoords.push(b.coords);
+    });
+
+    L.polyline(pathCoords,{weight:3,opacity:.8,dashArray:'6 4',color:'#ff6b00'}).addTo(map);
+    map.fitBounds(pathCoords,{padding:[20,20]});
+
+    /* === Utility: addPanel === */
+    function addPanel(position,cls,html){
+      const ctrl=L.control({position});
+      ctrl.onAdd=()=>{
+        const d=L.DomUtil.create('div',`panel ${cls}`);
+        d.innerHTML=html;
+        L.DomEvent.disableClickPropagation(d);
+        L.DomEvent.disableScrollPropagation(d);
+        return d;
+      };
+      return ctrl.addTo(map);
+    }
+
+    /* === Panels === */
+    // Legend
+    addPanel('bottomright','legend',`<h4>Legend</h4><ol>${bars.map(b=>`<li><b>${b.order}</b> <a href='${gLink(b)}' target='_blank' rel='noopener'>${b.name}</a></li>`).join('')}</ol>`);
+
+    // Itinerary
+    addPanel('topright','itinerary',`<h4>Маршрут &nbsp;⏰</h4><ol>${bars.map(b=>`<li><b>${b.time}</b> – ${b.name}</li>`).join('')}</ol>`);
+
+    // Recommendations
+    const recHtml=`<h4>Что заказать</h4>
+      <ol class='bar-list'>${bars.map(b=>`<li class='bar-item' data-order='${b.order}'>🍺 <b>${b.name}</b><br><small>${b.drink}</small><br>🍽️ <small>${b.food}</small></li>`).join('')}</ol>
+      <hr>
+      <h4>🍟 Snacks for 3</h4>
+      <ul>${sharedSnacks.map(s=>`<li>${s}</li>`).join('')}</ul>
+      <hr>
+      <h4>🚀 Советы</h4>
+      <ul>${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+
+    addPanel('topleft','recs',recHtml);
+
+    /* === Click‑through from recommendations === */
+    document.addEventListener('click',e=>{
+      const li=e.target.closest('.bar-item');
+      if(!li)return;
+      const order=parseInt(li.dataset.order,10);
+      const m=markers[order];
+      if(m){
+        map.setView(m.getLatLng(),16,{animate:true});
+        m.openPopup();
+      }
+    });
+  });
+  </script>
+</head>
+<body>
+  <noscript><p style="padding:1rem;font-family:monospace;color:red">⚠️ Эта страница требует JavaScript для отображения карты.</p></noscript>
+</body>
+</html>
