@@ -2,100 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Warsaw Golden Mile — Craft Beer & Cocktail Walk</title>
+  <title>Warsaw Golden Mile — Craft Beer & Cocktail Walk</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <!-- Leaflet & Routing Machine CSS (no SRI for sandbox) -->
+  <!-- Leaflet & Routing Machine CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-
   <style>
     html,body{margin:0;padding:0;height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
     #map{height:100%;width:100%}
-    .panel{position:absolute;z-index:900;background:#fff;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.2);padding:10px 12px;font-size:.85rem;line-height:1.35;max-height:45vh;overflow-y:auto}
+    /* panels fixed left */
+    .panel{position:absolute;left:20px;top:60px;z-index:900;background:#fff;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);padding:10px 12px;font-size:.85rem;line-height:1.35;max-height:55vh;overflow-y:auto;display:none;width:280px}
     .panel h4{margin:0 0 6px;font-size:1rem}
-    .fab{position:absolute;right:18px;width:44px;height:44px;border-radius:50%;background:#ff6b00;color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,.3)}
-    .fab:hover{filter:brightness(1.1)}
-    .marker-num{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#ff6b00;color:#fff;font-weight:700;font-size:.75rem;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.4)}
-    @media(max-width:600px){.panel{width:90vw;max-height:50vh;font-size:.95rem}.fab{bottom:var(--y)}}
-    @media(min-width:601px){.panel{right:20px;width:280px}.fab{bottom:var(--y)}}
+    /* FAB buttons */
+    .fab{position:absolute;left:18px;width:46px;height:46px;border-radius:50%;background:#ff6b00;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 6px rgba(0,0,0,.4);transition:transform .15s}
+    .fab:hover{transform:scale(1.1)}
+    .fab i{width:22px;height:22px;stroke-width:2px}
+    .marker-num{background:#ff6b00;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,.4)}
   </style>
 </head>
 <body>
 <div id="map"></div>
-
-<!-- Leaflet & Routing JS -->
+<!-- libs -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-
+<script src="https://unpkg.com/lucide@latest"></script>
 <script>
 window.addEventListener('DOMContentLoaded',()=>{
   const bars=[
-    {o:1,n:"Maryensztadt Craft Beer & Food",a:"Sienna 21",t:"17:00 – 17:40",d:"18 house taps",coords:[52.23319,21.00077]},
-    {o:2,n:"Cuda na Kiju",a:"Nowy Świat 6/12",t:"17:45 – 18:20",d:"16 taps & terrace",coords:[52.23511,21.01857]},
-    {o:3,n:"Browar Warszawski",a:"Grzybowska 56",t:"18:30 – 19:10",d:"Brew‑pub lager tanks",coords:[52.2328,20.98237]},
-    {o:4,n:"Bar Pacyfik",a:"Poznańska 21",t:"19:20 – 19:55",d:"Mezcal & taps",coords:[52.22684,21.01203]},
-    {o:5,n:"Hopla Beer House",a:"Chmielna 34",t:"20:05 – 20:40",d:"15 craft taps",coords:[52.22963,21.01378]},
-    {o:6,n:"Weles",a:"Nowogrodzka 11",t:"20:45 – 21:20",d:"Speakeasy stouts",coords:[52.22842,21.01101]},
-    {o:7,n:"Spiskowcy Rozkoszy",a:"Żurawia 47",t:"21:25 – 22:00",d:"Natural wine & porter",coords:[52.22661,21.01666]},
-    {o:8,n:"Jungle Cocktail Bar",a:"Nowy Świat 22",t:"22:05 – 22:40",d:"Tropical sours",coords:[52.23446,21.01965]},
-    {o:9,n:"META Disco & Pub",a:"Mazowiecka 14",t:"22:45 – 23:15",d:"Retro lagers",coords:[52.241,21.01397]},
-    {o:10,n:"Same Krafty Vis‑à‑vis",a:"Nowomiejska 10A",t:"23:25 – 23:55",d:"Farmhouse ales",coords:[52.24914,21.01173]},
-    {o:11,n:"Chmielarnia Marszałkowska",a:"Twarda 42",t:"00:05 – 00:40",d:"30 taps & curry",coords:[52.23737,21.00206]},
-    {o:12,n:"El Koktel",a:"Wilcza 26",t:"00:45 – 01:15",d:"Experimental flights",coords:[52.22468,21.01749]}
+    {o:1,n:"Maryensztadt Craft Beer & Food",a:"Sienna 21",t:"17:00 – 17:40",d:"18 house taps",c:[52.23319,21.00077]},
+    {o:2,n:"Cuda na Kiju",a:"Nowy Świat 6/12",t:"17:45 – 18:20",d:"16 taps & terrace",c:[52.23511,21.01857]},
+    {o:3,n:"Browar Warszawski",a:"Grzybowska 56",t:"18:30 – 19:10",d:"Brew‑pub lager tanks",c:[52.2328,20.98237]},
+    {o:4,n:"Bar Pacyfik",a:"Poznańska 21",t:"19:20 – 19:55",d:"Mezcal & taps",c:[52.22684,21.01203]},
+    {o:5,n:"Hopla Beer House",a:"Chmielna 34",t:"20:05 – 20:40",d:"15 craft taps",c:[52.22963,21.01378]},
+    {o:6,n:"Weles",a:"Nowogrodzka 11",t:"20:45 – 21:20",d:"Speakeasy stouts",c:[52.22842,21.01101]},
+    {o:7,n:"Spiskowcy Rozkoszy",a:"Żurawia 47",t:"21:25 – 22:00",d:"Natural wine & porter",c:[52.22661,21.01666]},
+    {o:8,n:"Jungle Cocktail Bar",a:"Nowy Świat 22",t:"22:05 – 22:40",d:"Tropical sours",c:[52.23446,21.01965]},
+    {o:9,n:"META Disco & Pub",a:"Mazowiecka 14",t:"22:45 – 23:15",d:"Retro lagers",c:[52.241,21.01397]},
+    {o:10,n:"Same Krafty Vis‑à‑vis",a:"Nowomiejska 10A",t:"23:25 – 23:55",d:"Farmhouse ales",c:[52.24914,21.01173]},
+    {o:11,n:"Chmielarnia Marszałkowska",a:"Twarda 42",t:"00:05 – 00:40",d:"30 taps & curry",c:[52.23737,21.00206]},
+    {o:12,n:"El Koktel",a:"Wilcza 26",t:"00:45 – 01:15",d:"Experimental flights",c:[52.22468,21.01749]}
   ];
-  const gmUrl=bar=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(bar.n+', '+bar.a+', Warsaw')}`;
+  const g=b=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.n+', '+b.a+', Warsaw')}`;
 
   const map=L.map('map').setView([52.233,21.01],13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-  const markers={},waypoints=[];
+  const markers={},wps=[];
   bars.forEach(b=>{
-    const icon=L.divIcon({html:`<div class='marker-num'>${b.o}</div>`,className:''});
-    const m=L.marker(b.coords,{icon}).addTo(map)
-      .bindPopup(`<strong><a href='${gmUrl(b)}' target='_blank'>${b.o}. ${b.n}</a></strong><br>${b.a}<br>${b.d}<br><em>${b.t}</em>`);
-    markers[b.o]=m;
-    waypoints.push(L.Routing.waypoint(L.latLng(b.coords[0],b.coords[1])));
+    const ic=L.divIcon({html:`<div class='marker-num'>${b.o}</div>`,className:''});
+    const m=L.marker(b.c,{icon:ic}).addTo(map)
+      .bindPopup(`<strong><a href='${g(b)}' target='_blank'>${b.o}. ${b.n}</a></strong><br>${b.a}<br>${b.d}<br><em>${b.t}</em>`);
+    markers[b.o]=m;wps.push(L.latLng(b.c[0],b.c[1]));
   });
 
-  // geolocation start
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const here=[pos.coords.latitude,pos.coords.longitude];
-      L.marker(here,{title:'You'}).addTo(map).bindPopup('You are here').openPopup();
-      routing.spliceWaypoints(0,0,L.latLng(here));
-      map.fitBounds(L.latLngBounds([...waypoints.map(w=>w.latLng),L.latLng(here)]),{padding:[20,20]});
-    });
-  }
-
-  const routing=L.Routing.control({
-    waypoints:waypoints,
+  const router=L.Routing.control({
+    waypoints:wps,
     router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1'}),
     lineOptions:{styles:[{color:'#ff6b00',weight:4}]},
-    addWaypoints:false,
-    collapsible:true,
-    show:false
+    addWaypoints:false,collapsible:true,show:false
   }).addTo(map);
-  const navPanel=routing._container; // reuse control div
-  navPanel.classList.add('panel'); navPanel.style.right='20px'; navPanel.style.top='60px';
+  const nav=router._container;nav.classList.add('panel');
 
-  // panels
-  const panel=(id,html,top)=>{const d=document.createElement('div');d.id=id;d.className='panel';d.style.top=top+'px';d.style.right='20px';d.innerHTML=html;document.body.appendChild(d);return d};
-  const pLegend=panel('legend',`<h4>Legend</h4><ol>${bars.map(b=>`<li><a href='${gmUrl(b)}' target='_blank'>${b.o}. ${b.n}</a></li>`).join('')}</ol>`,60);
-  const pSched=panel('sched',`<h4>Schedule</h4><ol>${bars.map(b=>`<li><b>${b.t}</b> – ${b.n}</li>`).join('')}</ol>`,240);
-  const pRecs=panel('recs',`<h4>What to order</h4><ol>${bars.map(b=>`<li data-o='${b.o}'><b>${b.n}</b><br>${b.d}</li>`).join('')}</ol>`,420);
-  navPanel.style.display='block';
+  const mkPanel=(id,title,body)=>{const d=document.createElement('div');d.id=id;d.className='panel';d.innerHTML=`<h4>${title}</h4>${body}`;document.body.appendChild(d);return d};
+  const pLegend=mkPanel('legend','Legend',`<ol>${bars.map(b=>`<li><a href='${g(b)}' target='_blank'>${b.o}. ${b.n}</a></li>`).join('')}</ol>`);
+  const pSched=mkPanel('sched','Schedule',`<ol>${bars.map(b=>`<li><b>${b.t}</b> – ${b.n}</li>`).join('')}</ol>`);
+  const pRecs=mkPanel('recs','What to Order',`<ol>${bars.map(b=>`<li data-o='${b.o}'><b>${b.n}</b><br>${b.d}</li>`).join('')}</ol>`);
+  pRecs.onclick=e=>{const li=e.target.closest('li');if(!li)return;const m=markers[+li.dataset.o];map.setView(m.getLatLng(),16);m.openPopup();};
 
-  pRecs.addEventListener('click',e=>{const li=e.target.closest('li');if(!li)return;const m=markers[+li.dataset.o];map.setView(m.getLatLng(),16);m.openPopup();});
+  const panels=[pLegend,pSched,pRecs,nav];
+  const showOnly=p=>{panels.forEach(x=>x.style.display=(x===p&&x.style.display!=='block')?'block':'none');};
 
-  // FAB
-  const fab=(id,txt,y,pan)=>{const f=document.createElement('div');f.id=id;f.className='fab';f.style.setProperty('--y',y+'px');f.textContent=txt;f.onclick=()=>{pan.style.display=pan.style.display==='none'?'block':'none'};document.body.appendChild(f)};
-  fab('fabL','ℹ',240,pLegend);
-  fab('fabS','⏰',180,pSched);
-  fab('fabR','🍺',120,pRecs);
-  fab('fabN','🧭',60,navPanel);
+  const addFab=(name,icon,offset,p)=>{
+    const f=document.createElement('div');f.className='fab';f.style.bottom=offset;f.innerHTML=`<i data-lucide='${icon}'></i>`;f.title=name;f.onclick=()=>showOnly(p);document.body.appendChild(f);};
+  addFab('Legend','info','274px',pLegend);
+  addFab('Schedule','clock','208px',pSched);
+  addFab('Recommendations','beer','142px',pRecs);
+  addFab('Navigation','compass','76px',nav);
 
-  if(window.innerWidth<=600){pLegend.style.display=pSched.style.display=pRecs.style.display=navPanel.style.display='none';}
+  // initial visibility desktop
+  if(window.innerWidth>600){pLegend.style.display=pSched.style.display='block';}
+
+  lucide.createIcons();
 });
 </script>
 </body>
