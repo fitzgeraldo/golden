@@ -29,18 +29,18 @@
 <script>
 window.addEventListener('DOMContentLoaded',()=>{
   const bars=[
-  {o:1,n:"BrewDog Warszawa",a:"Widok 8",t:"17:00 – 17:40",d:"18 taps of Scottish & guest brews",c:[52.23245,21.01105]}, 
-  {o:2,n:"Cuda na Kiju",a:"Nowy Świat 6/12",t:"17:45 – 18:20",d:"16 taps, terrace",c:[52.23511,21.01857]},
-  {o:3,n:"Jabeerwocky",a:"Nowogrodzka 12",t:"18:30 – 19:10",d:"17 rotating IPA‑heavy taps",c:[52.22852,21.01066]},
-  {o:4,n:"Bar Pacyfik",a:"Poznańska 21",t:"19:20 – 19:50",d:"Mezcal & pacific sours",c:[52.22959,21.01346]},
-  {o:5,n:"Hopla Beer House",a:"Chmielna 34",t:"19:55 – 20:25",d:"15 taps of Polish craft",c:[52.22893,21.01573]},
-  {o:6,n:"Weles",a:"Nowogrodzka 11",t:"20:30 – 21:05",d:"Speakeasy barrel cocktails",c:[52.2284,21.0099]},
-  {o:7,n:"Hopito Parkingowa",a:"Żurawia 32/34",t:"21:10 – 21:40",d:"NEIPA & sour kings",c:[52.22546,21.01759]},
-  {o:8,n:"Kufle i Kapsle",a:"Nowogrodzka 25",t:"21:45 – 22:15",d:"Warsaw craft staple",c:[52.2285,21.0072]},
-  {o:9,n:"Cześć!",a:"Grzybowska 2",t:"22:20 – 22:50",d:"9 taps & cosy vibe",c:[52.23666,21.00479]},
-  {o:10,n:"Same Krafty vis‑à‑vis",a:"Nowomiejska 10A",t:"22:55 – 23:25",d:"Tiny Old‑Town multitap",c:[52.24912,21.0117]},
-  {o:11,n:"PiwPaw Beer Heaven",a:"Foksal 16",t:"23:35 – 00:10",d:"79 taps, open late",c:[52.23603,21.02055]},
-  {o:12,n:"El Koktel",a:"Wilcza 26",t:"00:15 – ⏰",d:"Experimental mini‑cocktails",c:[52.22554,21.01432]}
+  {o:1,n:"PINTA Warszawa",a:"Chmielna 7/9",t:"19:30 – 20:05",d:"20 taps, burgers to start",c:[52.2319,21.0005]},
+  {o:2,n:"Bulldog Pub",a:"Krucza 42/44",t:"20:10 – 20:40",d:"15 taps, British‑style ales",c:[52.2286,21.013]},
+  {o:3,n:"Jabeerwocky",a:"Nowogrodzka 12",t:"20:45 – 21:15",d:"17 rotating IPA taps",c:[52.22852,21.01066]},
+  {o:4,n:"Hopito Parkingowa",a:"Żurawia 32/34",t:"21:20 – 21:50",d:"12 taps of hazy NEIPAs",c:[52.22546,21.01759]},
+  {o:5,n:"Cuda na Kiju",a:"Nowy Świat 6/12",t:"21:55 – 22:25",d:"16 taps, rooftop terrace",c:[52.23511,21.01857]},
+  {o:6,n:"Craft Rock Multitap",a:"Zgoda 9",t:"22:30 – 23:00",d:"14 taps of Polish sours",c:[52.2315,21.0149]},
+  {o:7,n:"Kufle i Kapsle",a:"Nowogrodzka 25",t:"23:05 – 23:35",d:"20 taps, tasting paddles",c:[52.2285,21.0072]},
+  {o:8,n:"Bar Pacyfik",a:"Poznańska 21",t:"23:40 – 00:10",d:"Tacos & mezcal, guest taps",c:[52.2259,21.0119]},
+  {o:9,n:"Weles",a:"Nowogrodzka 11",t:"00:15 – 00:45",d:"Barrel‑aged cocktails",c:[52.2286,21.0099]},
+  {o:10,n:"Hoppiness Beer & Food",a:"Chmielna 27/31",t:"00:50 – 01:20",d:"Burgers & 12 craft taps",c:[52.22925,21.01389]},
+  {o:11,n:"Gorączka Złota",a:"Wilcza 29",t:"01:25 – 01:55",d:"Old‑school multitap, 12 taps",c:[52.22538,21.013]},
+  {o:12,n:"PiwPaw Beer Heaven",a:"Foksal 16",t:"02:00 – ??",d:"79 taps, open late",c:[52.23603,21.02055]}
 ];
   const g=b=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.n+', '+b.a+', Warsaw')}`;
 
